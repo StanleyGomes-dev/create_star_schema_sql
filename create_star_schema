@@ -1,0 +1,82 @@
+-- Script SQL para criação do Star Schema - Análise de Professores
+-- Autor: Stanley Gomes (Baseado no desafio DIO)
+
+-- Criação do Banco de Dados (opcional, dependendo de onde for rodar)
+-- CREATE DATABASE Universidade_StarSchema;
+-- USE Universidade_StarSchema;
+
+-- ==================================================================
+-- 1. CRIAÇÃO DAS TABELAS DIMENSÃO
+-- ==================================================================
+
+-- Dimensão Tempo: Essencial para suprir a falta de datas no modelo original
+CREATE TABLE Dim_Tempo (
+    sk_tempo INT AUTO_INCREMENT PRIMARY KEY, -- Chave Surrogate
+    data_completa DATE NOT NULL,
+    ano INT NOT NULL,
+    semestre CHAR(6) NOT NULL, -- Ex: '2024.1'
+    mes INT NOT NULL,
+    nome_mes VARCHAR(20) NOT NULL -- Ex: 'Março'
+);
+
+-- Dimensão Professor: Foco da análise
+CREATE TABLE Dim_Professor (
+    sk_professor INT AUTO_INCREMENT PRIMARY KEY,
+    id_professor_original INT NOT NULL, -- Vínculo com sistema legado
+    nome_professor VARCHAR(150) NOT NULL,
+    titulacao VARCHAR(50), -- Ex: Doutor, Mestre
+    data_admissao DATE
+);
+
+-- Dimensão Departamento: Local de alocação
+CREATE TABLE Dim_Departamento (
+    sk_departamento INT AUTO_INCREMENT PRIMARY KEY,
+    id_departamento_original INT NOT NULL,
+    nome_departamento VARCHAR(100) NOT NULL,
+    campus VARCHAR(100) NOT NULL
+);
+
+-- Dimensão Curso: Contexto da oferta
+CREATE TABLE Dim_Curso (
+    sk_curso INT AUTO_INCREMENT PRIMARY KEY,
+    id_curso_original INT NOT NULL,
+    nome_curso VARCHAR(150) NOT NULL,
+    nivel VARCHAR(50) -- Ex: Bacharelado, Tecnólogo
+);
+
+-- Dimensão Disciplina: Detalhes da matéria
+CREATE TABLE Dim_Disciplina (
+    sk_disciplina INT AUTO_INCREMENT PRIMARY KEY,
+    id_disciplina_original INT NOT NULL,
+    nome_disciplina VARCHAR(150) NOT NULL,
+    carga_horaria_padrao INT NOT NULL
+);
+
+-- ==================================================================
+-- 2. CRIAÇÃO DA TABELA FATO
+-- ==================================================================
+
+CREATE TABLE Fato_Professor_Aulas (
+    id_fato INT AUTO_INCREMENT PRIMARY KEY,
+    
+    -- Chaves Estrangeiras (FKs) para as Dimensões
+    sk_professor INT NOT NULL,
+    sk_curso INT NOT NULL,
+    sk_departamento INT NOT NULL,
+    sk_disciplina INT NOT NULL,
+    sk_tempo INT NOT NULL,
+    
+    -- Métricas (Fatos numéricos para análise)
+    carga_horaria_ministrada INT NOT NULL, -- Total de horas dadas naquela turma
+    quantidade_aulas INT NOT NULL,         -- Quantidade de encontros
+    valor_hora_aula DECIMAL(10,2),         -- Custo/Valor da hora do professor
+    
+    -- Definição das Constraints de Chave Estrangeira
+    FOREIGN KEY (sk_professor) REFERENCES Dim_Professor(sk_professor),
+    FOREIGN KEY (sk_curso) REFERENCES Dim_Curso(sk_curso),
+    FOREIGN KEY (sk_departamento) REFERENCES Dim_Departamento(sk_departamento),
+    FOREIGN KEY (sk_disciplina) REFERENCES Dim_Disciplina(sk_disciplina),
+    FOREIGN KEY (sk_tempo) REFERENCES Dim_Tempo(sk_tempo)
+);
+
+-- Fim do script
